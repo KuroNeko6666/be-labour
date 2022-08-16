@@ -2,31 +2,44 @@ package main
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/KuroNeko6666/be-labour/database"
+	"github.com/KuroNeko6666/be-labour/responses"
 	"github.com/KuroNeko6666/be-labour/routes"
 	"github.com/gofiber/fiber/v2"
 )
 
 func welcome(c *fiber.Ctx) error {
-	return c.SendString("welcome to my res api")
+	return c.Status(http.StatusOK).JSON(
+		responses.ResponseText{
+			Status:  http.StatusOK,
+			Message: "success",
+			Data:    "welcome to labour api",
+		},
+	)
 }
 
-func setupRoutes(app *fiber.App) {
-	app.Get("/api", welcome)
-	app.Get("/api/users", routes.GetUsers)
-	app.Get("/api/users/:id", routes.GetUser)
-	app.Post("/api/users", routes.CreateUser)
-	app.Put("/api/users/:id", routes.UpdateUser)
-	app.Delete("/api/users/:id", routes.DeleteUser)
-
+func notFound(c *fiber.Ctx) error {
+	return c.Status(http.StatusNotFound).JSON(
+		responses.ResponseText{
+			Status:  http.StatusNotFound,
+			Message: "error",
+			Data:    "url not found",
+		},
+	)
 }
 
 func main() {
 	database.ConnectDB()
 	app := fiber.New()
-	setupRoutes(app)
 	app.Get("/api", welcome)
+	routes.AuthRoute(app)
+	routes.UserRoutes(app)
+	routes.AdminRoutes(app)
+	routes.CompanyRoutes(app)
+	routes.ScheduleRoute(app)
+	app.Use("/", notFound)
 
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(":8000"))
 }
